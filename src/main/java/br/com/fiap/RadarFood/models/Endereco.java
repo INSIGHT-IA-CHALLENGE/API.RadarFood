@@ -1,6 +1,11 @@
 package br.com.fiap.RadarFood.models;
 
 
+import org.springframework.hateoas.EntityModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+import br.com.fiap.RadarFood.controllers.EnderecoController;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -56,6 +61,14 @@ public class Endereco {
 
     @NotNull
     private Boolean ativo;
+
+    public EntityModel<Endereco> toEntityModel(){
+        return EntityModel.of(
+            this,
+            linkTo(methodOn(EnderecoController.class).buscar(id)).withSelfRel(),
+            linkTo(methodOn(EnderecoController.class).atualizar(id, this)).withRel("update")
+        );
+    }
 
 
     
