@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -54,6 +55,18 @@ public class UsuarioController {
         repository.save(usuario);
 
         return usuario.toEntityModel();
+
+    }
+
+    @DeleteMapping("{id}")
+    public ResponseEntity<Usuario> apagar(@PathVariable Integer id) {
+        var usuario = getUsuario(id);
+        log.info("Apagando o usuario: " + usuario);
+
+        usuario.setAtivo(false);
+        repository.save(usuario);
+
+        return ResponseEntity.noContent().build();
 
     }
 

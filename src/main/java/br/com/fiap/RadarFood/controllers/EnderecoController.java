@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Pageable;
 
 import br.com.fiap.RadarFood.repository.EnderecoRepository;
 import jakarta.validation.Valid;
@@ -24,7 +25,7 @@ import br.com.fiap.RadarFood.exception.RestNotFoundException;
 import br.com.fiap.RadarFood.models.Endereco;
 
 @RestController
-@RequestMapping("api/endereco")
+@RequestMapping("/api/endereco")
 public class EnderecoController {
  
     
@@ -37,7 +38,7 @@ public class EnderecoController {
     PagedResourcesAssembler<Object> assembler;
 
     @GetMapping
-    public PagedModel<EntityModel<Object>> listar(@PageableDefault(size = 5) org.springframework.data.domain.Pageable pageable ){
+    public PagedModel<EntityModel<Object>> listar(@PageableDefault(size = 5) Pageable pageable){
 
         var enderecos = repository.findAll(pageable);
         return assembler.toModel(enderecos.map(Endereco::toEntityModel));
@@ -47,12 +48,10 @@ public class EnderecoController {
     @PostMapping("/cadastrar")
     public ResponseEntity<EntityModel<Endereco>> cadastrar(@RequestBody Endereco endereco){
 
-        log.info("Cadastrando usuário: {}", endereco);
+        log.info("Cadastrando endereço: {}", endereco);
 
         repository.save(endereco);
-        log.info("Usuário cadastrado: {}", endereco);
-
-        repository.save(endereco);
+        log.info("Endereço cadastrado: {}", endereco);
 
         return ResponseEntity
                 .created(endereco.toEntityModel().getRequiredLink("self").toUri())
@@ -82,18 +81,18 @@ public class EnderecoController {
         var endereco = getEndereco(id);
         log.info("Apagando o endereco: " + endereco);
 
-        repository.delete(endereco);
+        endereco.setAtivo(false);
+        repository.save(endereco);
+        
         return ResponseEntity.noContent().build();
-
-
     }
 
 
     private Endereco getEndereco(Integer id) {
         return repository
                 .findById(id)
-                .filter(usuario -> usuario.getAtivo())
-                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
+                .filter(endereco -> endereco.getAtivo())
+                .orElseThrow(() -> new RestNotFoundException("Endereço não encontrado"));
     }
         
     }

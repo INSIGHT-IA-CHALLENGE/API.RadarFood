@@ -9,6 +9,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -37,17 +39,19 @@ public class Alimento {
     @Column(precision = 5)
     private Integer quantidade;
 
-    @NotNull 
+    @NotNull
+    @Future(message = "Data de validade deve maior do que a data atual")
     private Calendar dataValidade;
 
-    @NotNull 
+    @NotNull
+    @DecimalMin(value = "1.0", message = "Valor deve ser maior ou igual a zero")
     private Double valor;
+    
+    @NotNull 
+    private Boolean ativo;
 
     @NotNull
     @Column(columnDefinition = "CLOB")
     private String foto;
-
-    @NotNull 
-    private Boolean ativo;
 
 }

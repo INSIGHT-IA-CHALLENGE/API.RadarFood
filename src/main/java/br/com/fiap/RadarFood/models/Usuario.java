@@ -45,22 +45,23 @@ public class Usuario {
     @NotNull
     @Pattern(regexp = "^\\(\\d{2}\\)\\s(?:9\\d{4}-\\d{4}|\\d{4}-\\d{4})$", message = "Telefone inválido")
     private String telefone;
+    
+    @NotNull
+    private TipoUsuario tipoUsuario;
+    
+    @NotNull
+    private Boolean ativo;
 
     @NotNull
     @Column(columnDefinition = "CLOB")
     private String foto;
 
-    @NotNull
-    private TipoUsuario tipoUsuario;
-
-    @NotNull
-    private Boolean ativo;
-
     public EntityModel<Usuario> toEntityModel(){
         return EntityModel.of(
             this,
             linkTo(methodOn(UsuarioController.class).buscar(id)).withSelfRel(),
-            linkTo(methodOn(UsuarioController.class).atualizar(id, this)).withRel("update")
+            linkTo(methodOn(UsuarioController.class).atualizar(id, this)).withRel("update"),
+            linkTo(methodOn(UsuarioController.class).apagar(id)).withRel("delete")
         );
     }
 }

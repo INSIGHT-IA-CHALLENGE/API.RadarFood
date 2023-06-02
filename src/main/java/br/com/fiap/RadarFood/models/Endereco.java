@@ -5,6 +5,8 @@ import org.springframework.hateoas.EntityModel;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
+import org.springframework.data.domain.Pageable;
+
 import br.com.fiap.RadarFood.controllers.EnderecoController;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -66,7 +68,9 @@ public class Endereco {
         return EntityModel.of(
             this,
             linkTo(methodOn(EnderecoController.class).buscar(id)).withSelfRel(),
-            linkTo(methodOn(EnderecoController.class).atualizar(id, this)).withRel("update")
+            linkTo(methodOn(EnderecoController.class).listar(Pageable.unpaged())).withRel("all"),
+            linkTo(methodOn(EnderecoController.class).atualizar(id, this)).withRel("update"),
+            linkTo(methodOn(EnderecoController.class).apagar(id)).withRel("delete")
         );
     }
 
