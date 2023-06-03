@@ -2,6 +2,14 @@ package br.com.fiap.RadarFood.models;
 
 import java.util.Calendar;
 
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.hateoas.EntityModel;
+
+import br.com.fiap.RadarFood.controllers.AlimentoController;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,5 +61,16 @@ public class Alimento {
     @NotNull
     @Column(columnDefinition = "CLOB")
     private String foto;
+
+
+    public EntityModel<Alimento> toEntityModel(){
+        return EntityModel.of(
+            this,
+            linkTo(methodOn(AlimentoController.class).buscar(id)).withSelfRel(),
+            linkTo(methodOn(AlimentoController.class).listar(Pageable.unpaged())).withRel("all"),
+            linkTo(methodOn(AlimentoController.class).atualizar(id, this)).withRel("update"),
+            linkTo(methodOn(AlimentoController.class).apagar(id)).withRel("delete")
+        );
+    }
 
 }

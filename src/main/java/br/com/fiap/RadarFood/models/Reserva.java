@@ -2,6 +2,15 @@ package br.com.fiap.RadarFood.models;
 
 import java.util.Calendar;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.hateoas.EntityModel;
+
+import br.com.fiap.RadarFood.controllers.ReservaController;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -39,5 +48,14 @@ public class Reserva {
 
     @NotNull
     private Boolean ativo;
+
+    public EntityModel<Reserva> toEntityModel(){
+        return EntityModel.of(this, 
+            linkTo(methodOn(ReservaController.class).buscar(id)).withSelfRel(),
+            linkTo(methodOn(ReservaController.class).listar(Pageable.unpaged())).withRel("all"),
+            linkTo(methodOn(ReservaController.class).atualizar(id, this)).withRel("update"),
+            linkTo(methodOn(ReservaController.class).apagar(id)).withRel("delete")
+        );
+    }
 
 }
