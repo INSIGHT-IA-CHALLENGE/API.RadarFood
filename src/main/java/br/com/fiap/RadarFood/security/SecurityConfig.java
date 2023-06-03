@@ -1,4 +1,4 @@
-package br.com.fiap.RadarFood.config;
+package br.com.fiap.RadarFood.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;

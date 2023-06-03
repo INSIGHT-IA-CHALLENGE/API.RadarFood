@@ -1,4 +1,4 @@
-package br.com.fiap.RadarFood.config;
+package br.com.fiap.RadarFood.security;
 
 import java.io.IOException;
 
@@ -9,7 +9,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import br.com.fiap.RadarFood.services.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,4 +1,4 @@
-package br.com.fiap.RadarFood.services;
+package br.com.fiap.RadarFood.security;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

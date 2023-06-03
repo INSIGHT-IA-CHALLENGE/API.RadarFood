@@ -22,7 +22,7 @@ import br.com.fiap.RadarFood.exception.RestNotFoundException;
 import br.com.fiap.RadarFood.models.Credencial;
 import br.com.fiap.RadarFood.models.Usuario;
 import br.com.fiap.RadarFood.repository.UsuarioRepository;
-import br.com.fiap.RadarFood.services.TokenService;
+import br.com.fiap.RadarFood.security.TokenService;
 import jakarta.validation.Valid;
 
 @RestController
