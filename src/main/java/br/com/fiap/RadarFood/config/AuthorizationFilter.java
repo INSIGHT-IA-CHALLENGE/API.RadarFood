@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import br.com.fiap.RadarFood.services.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,47 +18,41 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class AuthorizationFilter extends OncePerRequestFilter {
 
-    // @Autowired
-    // TokenService tokenService;
+    @Autowired
+    TokenService tokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
-        // pegar o token header
-        // var token = getToken(request);
-
-        // // se for valido, autenticar
-        // if (token != null){
-        //     var usuario = tokenService.getValidateUser(token);
-        //     Authentication auth = new UsernamePasswordAuthenticationToken(usuario.getEmail(), null, usuario.getAuthorities());
-        //     SecurityContextHolder.getContext().setAuthentication(auth);
-        // }
-
-        // //chamar o proximo
-        // filterChain.doFilter(request, response);
-
+                
+        //liberar o cors
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
         response.setHeader("Access-Control-Allow-Headers", "*");
         response.setHeader("Access-Control-Max-Age", "3600");
+        
+        //pegar o token header
+        var token = getToken(request);
 
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            response.setStatus(HttpServletResponse.SC_OK);
-        } else {
-            filterChain.doFilter(request, response);
+        // se for valido, autenticar
+        if (token != null){
+            var usuario = tokenService.getValidateUser(token);
+            Authentication auth = new UsernamePasswordAuthenticationToken(usuario.getEmail(), null, usuario.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
+        //chamar o proximo
+        filterChain.doFilter(request, response);
     }
 
-    // private String getToken(HttpServletRequest request) {
-    //     var header = request.getHeader("Authorization"); // Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    private String getToken(HttpServletRequest request) {
+        var header = request.getHeader("Authorization");
 
-    //     if (header == null || header.isEmpty() || !header.startsWith("Bearer ")){
-    //         return null;
-    //     }
+        if (header == null || header.isEmpty() || !header.startsWith("Bearer ")) {
+            return null;
+        }
 
-    //     return header.replace("Bearer ", "");
-    // }
-    
+        return header.replace("Bearer ", "");
+    }
+
 }

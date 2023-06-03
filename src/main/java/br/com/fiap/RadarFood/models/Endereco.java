@@ -8,7 +8,6 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import org.springframework.data.domain.Pageable;
 
 import br.com.fiap.RadarFood.controllers.EnderecoController;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,7 +31,7 @@ public class Endereco {
     private Integer id;
 
     @NotNull
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @ManyToOne
     private Usuario usuario;
 
     @Size(min = 1, max = 150, message = "Logradouro deve ter entre 1 e 150 caracteres")
