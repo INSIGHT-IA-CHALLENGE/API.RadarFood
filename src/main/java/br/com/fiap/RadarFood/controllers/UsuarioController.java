@@ -5,6 +5,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,8 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.fiap.RadarFood.exception.RestNotFoundException;
+import br.com.fiap.RadarFood.models.Credencial;
 import br.com.fiap.RadarFood.models.Usuario;
 import br.com.fiap.RadarFood.repository.UsuarioRepository;
+import br.com.fiap.RadarFood.security.TokenService;
 import jakarta.validation.Valid;
 
 @RestController
@@ -26,12 +33,23 @@ public class UsuarioController {
 
     @Autowired
     UsuarioRepository repository;
+
+    @Autowired
+    AuthenticationManager manager;
+
+    @Autowired
+    PasswordEncoder encoder;
+
+    @Autowired
+    TokenService tokenService;
     
     @PostMapping("/cadastrar")
     public ResponseEntity<EntityModel<Usuario>> cadastrar(@RequestBody Usuario usuario) {
         log.info("Cadastrando usuário: {}", usuario);
 
+        usuario.setSenha(encoder.encode(usuario.getSenha()));
         repository.save(usuario);
+
         log.info("Usuário cadastrado: {}", usuario);
         
         return ResponseEntity
@@ -39,10 +57,25 @@ public class UsuarioController {
                 .body(usuario.toEntityModel());
     }
 
-    @GetMapping("{id}")
-    public EntityModel<Usuario> buscar(@PathVariable Integer id) {
-        log.info("Buscando usuario com id " + id);
-        return getUsuario(id).toEntityModel();
+    @PostMapping("/login")
+    public ResponseEntity<Object> login(@RequestBody @Valid Credencial credencial){
+        manager.authenticate(credencial.toAuthentication());
+
+        var token = tokenService.generateToken(credencial);
+        return ResponseEntity.ok(token);
+    }
+
+    @GetMapping
+    public EntityModel<Usuario> buscar() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        log.info("Buscando usuario com email " + email);
+
+        var usuario = repository.findByEmail(email)
+                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
+        
+        return usuario.toEntityModel();
 
     }
 
@@ -54,6 +87,18 @@ public class UsuarioController {
         repository.save(usuario);
 
         return usuario.toEntityModel();
+
+    }
+
+    @DeleteMapping("{id}")
+    public ResponseEntity<Usuario> apagar(@PathVariable Integer id) {
+        var usuario = getUsuario(id);
+        log.info("Apagando o usuario: " + usuario);
+
+        usuario.setAtivo(false);
+        repository.save(usuario);
+
+        return ResponseEntity.noContent().build();
 
     }
 

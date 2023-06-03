@@ -1,7 +1,13 @@
 package br.com.fiap.RadarFood.models;
 
 
-import jakarta.persistence.CascadeType;
+import org.springframework.hateoas.EntityModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+import org.springframework.data.domain.Pageable;
+
+import br.com.fiap.RadarFood.controllers.EnderecoController;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,7 +31,7 @@ public class Endereco {
     private Integer id;
 
     @NotNull
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @ManyToOne
     private Usuario usuario;
 
     @Size(min = 1, max = 150, message = "Logradouro deve ter entre 1 e 150 caracteres")
@@ -56,6 +62,16 @@ public class Endereco {
 
     @NotNull
     private Boolean ativo;
+
+    public EntityModel<Endereco> toEntityModel(){
+        return EntityModel.of(
+            this,
+            linkTo(methodOn(EnderecoController.class).buscar(id)).withSelfRel(),
+            linkTo(methodOn(EnderecoController.class).listar(Pageable.unpaged())).withRel("all"),
+            linkTo(methodOn(EnderecoController.class).atualizar(id, this)).withRel("update"),
+            linkTo(methodOn(EnderecoController.class).apagar(id)).withRel("delete")
+        );
+    }
 
 
     
