@@ -60,7 +60,7 @@ public class ReservaController {
 
     @GetMapping("{id}")
     public EntityModel<Reserva> buscar(@PathVariable Integer id){
-        log.info("Buscando endereco com id " + id);
+        log.info("Buscando reserva com id " + id);
         return getReserva (id).toEntityModel();
 
     }
@@ -91,7 +91,7 @@ public class ReservaController {
     private Reserva getReserva(Integer id) {
         return repository
                 .findById(id)
-                .filter(endereco -> endereco.getAtivo())
+                .filter(reserva -> reserva.getAtivo())
                 .orElseThrow(() -> new RestNotFoundException("Reserva não encontrado"));
     }
 }

@@ -9,8 +9,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.EntityModel;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import br.com.fiap.RadarFood.controllers.AlimentoController;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -36,7 +37,7 @@ public class Alimento {
     private Integer id;
 
     @NotNull 
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @ManyToOne
     private Endereco endereco;
 
     @NotNull 
@@ -49,9 +50,9 @@ public class Alimento {
 
     @NotNull
     @Future(message = "Data de validade deve maior do que a data atual")
+    @JsonFormat(pattern = "dd/MM/yyyy")
     private Calendar dataValidade;
 
-    @NotNull
     @DecimalMin(value = "1.0", message = "Valor deve ser maior ou igual a zero")
     private Double valor;
     
