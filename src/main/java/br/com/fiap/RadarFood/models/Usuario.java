@@ -5,6 +5,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
@@ -41,8 +43,9 @@ public class Usuario implements UserDetails{
     @Column(unique = true)
     private String email;
 
-    @Size(min = 5, max = 200, message = "Senha deve ter entre 1 e 200 caracteres")
     @NotNull
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Size(min = 5, max = 200, message = "Senha deve ter entre 1 e 200 caracteres")
     private String senha;
 
     @Size(min = 1, max = 100, message = "Nome deve ter entre 1 e 100 caracteres")

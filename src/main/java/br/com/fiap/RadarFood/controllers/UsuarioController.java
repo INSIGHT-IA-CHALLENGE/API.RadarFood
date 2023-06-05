@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -20,15 +21,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.fiap.RadarFood.exception.RestNotFoundException;
 import br.com.fiap.RadarFood.models.Credencial;
+import br.com.fiap.RadarFood.models.Token;
 import br.com.fiap.RadarFood.models.Usuario;
 import br.com.fiap.RadarFood.repository.UsuarioRepository;
 import br.com.fiap.RadarFood.security.TokenService;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/usuario")
 public class UsuarioController {
-    
+
     Logger log = LoggerFactory.getLogger(UsuarioController.class);
 
     @Autowired
@@ -42,23 +45,40 @@ public class UsuarioController {
 
     @Autowired
     TokenService tokenService;
-    
+
     @PostMapping("/cadastrar")
     public ResponseEntity<EntityModel<Usuario>> cadastrar(@RequestBody Usuario usuario) {
-        log.info("Cadastrando usuário: {}", usuario);
-
-        usuario.setSenha(encoder.encode(usuario.getSenha()));
-        repository.save(usuario);
-
-        log.info("Usuário cadastrado: {}", usuario);
         
+        if (!repository.findByEmail(usuario.getEmail()).isEmpty()){
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        if (!repository.findByTelefone(usuario.getTelefone()).isEmpty())
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+
+
+            try {
+                usuario.setSenha(encoder.encode(usuario.getSenha()));
+                repository.save(usuario);
+                
+            } catch (ConstraintViolationException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
+            }catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+
         return ResponseEntity
                 .created(usuario.toEntityModel().getRequiredLink("self").toUri())
                 .body(usuario.toEntityModel());
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Object> login(@RequestBody @Valid Credencial credencial){
+    public ResponseEntity<Token> login(@RequestBody @Valid Credencial credencial) {
+
+        if(repository.findByEmail(credencial.email()).isEmpty())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
         manager.authenticate(credencial.toAuthentication());
 
         var token = tokenService.generateToken(credencial);
@@ -70,11 +90,9 @@ public class UsuarioController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
-        log.info("Buscando usuario com email " + email);
-
         var usuario = repository.findByEmail(email)
                 .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
-        
+
         return usuario.toEntityModel();
 
     }
