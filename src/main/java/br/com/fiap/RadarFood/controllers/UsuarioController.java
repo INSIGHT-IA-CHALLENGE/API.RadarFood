@@ -48,25 +48,24 @@ public class UsuarioController {
 
     @PostMapping("/cadastrar")
     public ResponseEntity<EntityModel<Usuario>> cadastrar(@RequestBody Usuario usuario) {
-        
-        if (!repository.findByEmail(usuario.getEmail()).isEmpty()){
+
+        if (!repository.findByEmail(usuario.getEmail()).isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
 
         if (!repository.findByTelefone(usuario.getTelefone()).isEmpty())
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
 
+        try {
+            usuario.setSenha(encoder.encode(usuario.getSenha()));
+            repository.save(usuario);
 
-            try {
-                usuario.setSenha(encoder.encode(usuario.getSenha()));
-                repository.save(usuario);
-                
-            } catch (ConstraintViolationException e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (ConstraintViolationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
-            }catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
 
         return ResponseEntity
                 .created(usuario.toEntityModel().getRequiredLink("self").toUri())
@@ -76,7 +75,7 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<Token> login(@RequestBody @Valid Credencial credencial) {
 
-        if(repository.findByEmail(credencial.email()).isEmpty())
+        if (repository.findByEmail(credencial.email()).isEmpty())
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         manager.authenticate(credencial.toAuthentication());
@@ -87,13 +86,17 @@ public class UsuarioController {
 
     @GetMapping
     public EntityModel<Usuario> buscar() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
 
-        var usuario = repository.findByEmail(email)
-                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
+            var usuario = repository.findByEmail(email)
+                    .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
 
-        return usuario.toEntityModel();
+            return usuario.toEntityModel();
+        } catch (Exception e) {
+            return null;
+        }
 
     }
 

@@ -8,6 +8,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import org.springframework.data.domain.Pageable;
 
 import br.com.fiap.RadarFood.controllers.EnderecoController;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,9 +18,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Builder
 @Entity
 @Data
 @NoArgsConstructor
@@ -55,6 +58,13 @@ public class Endereco {
     private String cep;
 
     @NotNull
+    @Size(min = 1, max = 10, message = "Número deve ter entre 1 e 10 caracteres")
+    private String numero;
+
+    @Column(nullable = true)
+    private String complemento;
+
+    @NotNull
     private Double latitude;
 
     @NotNull
@@ -67,7 +77,7 @@ public class Endereco {
         return EntityModel.of(
             this,
             linkTo(methodOn(EnderecoController.class).buscar(id)).withSelfRel(),
-            linkTo(methodOn(EnderecoController.class).listar(Pageable.unpaged())).withRel("all"),
+            linkTo(methodOn(EnderecoController.class).listar(null, Pageable.unpaged())).withRel("all"),
             linkTo(methodOn(EnderecoController.class).atualizar(id, this)).withRel("update"),
             linkTo(methodOn(EnderecoController.class).apagar(id)).withRel("delete")
         );
