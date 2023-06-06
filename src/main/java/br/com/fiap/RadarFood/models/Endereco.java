@@ -65,12 +65,6 @@ public class Endereco {
     private String complemento;
 
     @NotNull
-    private Double latitude;
-
-    @NotNull
-    private Double longitude;
-
-    @NotNull
     private Boolean ativo;
 
     public EntityModel<Endereco> toEntityModel(){

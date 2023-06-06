@@ -52,7 +52,7 @@ public class EnderecoController {
         var usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
 
-        if(pesquisa == null)
+        if (pesquisa == null)
             pesquisa = "";
 
         var enderecos = repository.searchByUsuario(usuario, pesquisa, pageable);
@@ -87,9 +87,15 @@ public class EnderecoController {
 
     @PutMapping("{id}")
     public EntityModel<Endereco> atualizar(@PathVariable Integer id, @RequestBody @Valid Endereco endereco) {
-        log.info("Atualizando endereco com id " + id);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        var usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
+
         getEndereco(id);
         endereco.setId(id);
+        endereco.setUsuario(usuario);
         repository.save(endereco);
 
         return endereco.toEntityModel();
@@ -98,8 +104,16 @@ public class EnderecoController {
 
     @DeleteMapping("{id}")
     public ResponseEntity<Endereco> apagar(@PathVariable Integer id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        var usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
+
         var endereco = getEndereco(id);
-        log.info("Apagando o endereco: " + endereco);
+
+        if(endereco.getUsuario().getId() != usuario.getId())
+            return ResponseEntity.status(401).build();
 
         endereco.setAtivo(false);
         repository.save(endereco);

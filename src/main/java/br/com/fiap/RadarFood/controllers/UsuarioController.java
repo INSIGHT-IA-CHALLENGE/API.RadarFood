@@ -113,8 +113,15 @@ public class UsuarioController {
 
     @DeleteMapping("{id}")
     public ResponseEntity<Usuario> apagar(@PathVariable Integer id) {
-        var usuario = getUsuario(id);
-        log.info("Apagando o usuario: " + usuario);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        var usuario = repository.findByEmail(email)
+                .filter(u -> u.getAtivo())
+                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
+
+        if (usuario.getId() != id)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         usuario.setAtivo(false);
         repository.save(usuario);
