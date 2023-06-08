@@ -1,5 +1,7 @@
 package br.com.fiap.RadarFood.controllers;
 
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +25,11 @@ import br.com.fiap.RadarFood.models.Reserva;
 import br.com.fiap.RadarFood.repository.ReservaRepository;
 import jakarta.validation.Valid;
 
-
 @RestController
 @RequestMapping("/api/reserva")
 
 public class ReservaController {
-    
+
     Logger log = LoggerFactory.getLogger(ReservaController.class);
 
     @Autowired
@@ -38,7 +39,7 @@ public class ReservaController {
     PagedResourcesAssembler<Object> assembler;
 
     @GetMapping
-    public PagedModel<EntityModel<Object>> listar(@PageableDefault(size = 5) Pageable pageable){
+    public PagedModel<EntityModel<Object>> listar(@PageableDefault(size = 5) Pageable pageable) {
 
         var alimentos = repository.findAll(pageable);
         return assembler.toModel(alimentos.map(Reserva::toEntityModel));
@@ -46,48 +47,56 @@ public class ReservaController {
     }
 
     @PostMapping("/cadastrar")
-    public ResponseEntity<EntityModel<Reserva>> cadastrar(@RequestBody Reserva reserva){
-
-        log.info("Cadastrando reserva: {}", reserva);
+    public ResponseEntity<EntityModel<Reserva>> cadastrar(@RequestBody Reserva reserva) {
 
         repository.save(reserva);
-        log.info("Reserva cadastrada: {}", reserva);
 
-        return ResponseEntity
-                .created(reserva.toEntityModel().getRequiredLink("self").toUri())
-                .body(reserva.toEntityModel());
+        return ResponseEntity.created(reserva.toEntityModel().getRequiredLink("self").toUri()).build();
     }
 
     @GetMapping("{id}")
-    public EntityModel<Reserva> buscar(@PathVariable Integer id){
+    public EntityModel<Reserva> buscar(@PathVariable Integer id) {
         log.info("Buscando reserva com id " + id);
-        return getReserva (id).toEntityModel();
+        return getReserva(id).toEntityModel();
 
     }
 
-    
     @PutMapping("{id}")
     public EntityModel<Reserva> atualizar(@PathVariable Integer id, @RequestBody @Valid Reserva reserva) {
         log.info("Atualizando reserva com id " + id);
         getReserva(id);
         reserva.setId(id);
         repository.save(reserva);
-        
+
         return reserva.toEntityModel();
-        
+
     }
-    
+
     @DeleteMapping("{id}")
-    public ResponseEntity<Reserva> apagar(@PathVariable Integer id){
+    public ResponseEntity<Reserva> apagar(@PathVariable Integer id) {
         var reserva = getReserva(id);
         log.info("Apagando a reserva: " + reserva);
-        
+
         reserva.setAtivo(false);
         repository.save(reserva);
-        
+
         return ResponseEntity.noContent().build();
     }
-    
+
+    @GetMapping("/alimento/{id}")
+    public ResponseEntity<EntityModel<Reserva>> buscarPorAlimento(@PathVariable Integer id) {
+        log.info("Buscando alimento com id " + id);
+
+        Optional<Reserva> reserva = repository.findByAlimento(id);
+
+        if(reserva.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(reserva.get().toEntityModel());
+
+    }
+
     private Reserva getReserva(Integer id) {
         return repository
                 .findById(id)

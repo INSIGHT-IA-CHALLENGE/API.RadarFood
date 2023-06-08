@@ -102,7 +102,19 @@ public class UsuarioController {
 
     @PutMapping("{id}")
     public EntityModel<Usuario> atualizar(@PathVariable Integer id, @RequestBody @Valid Usuario usuario) {
-        log.info("Atualizando usuario com id " + id);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        var usuarioLogado = repository.findByEmail(email)
+                .filter(u -> u.getAtivo())
+                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
+
+        if (usuarioLogado.getId() != id)
+            throw new RestNotFoundException("Acesso não autorizado");
+
+        if(!usuario.getSenha().toString().equals(usuarioLogado.getSenha().toString()))
+            usuario.setSenha(encoder.encode(usuario.getSenha()));
+        
         getUsuario(id);
         usuario.setId(id);
         repository.save(usuario);

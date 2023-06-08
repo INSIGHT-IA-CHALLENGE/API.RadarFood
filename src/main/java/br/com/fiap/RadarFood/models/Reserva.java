@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.EntityModel;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import br.com.fiap.RadarFood.controllers.ReservaController;
 
@@ -50,6 +52,7 @@ public class Reserva {
     private Calendar dataRetirada;
 
     @NotNull
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Boolean ativo;
 
     public EntityModel<Reserva> toEntityModel(){
