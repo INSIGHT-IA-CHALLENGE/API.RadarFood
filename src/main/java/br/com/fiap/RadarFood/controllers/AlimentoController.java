@@ -3,12 +3,15 @@ package br.com.fiap.RadarFood.controllers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,11 +19,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.fiap.RadarFood.exception.RestNotFoundException;
 import br.com.fiap.RadarFood.models.Alimento;
+import br.com.fiap.RadarFood.models.TipoUsuario;
 import br.com.fiap.RadarFood.repository.AlimentoRepository;
+import br.com.fiap.RadarFood.repository.UsuarioRepository;
 import jakarta.validation.Valid;
 
 @RestController
@@ -33,12 +39,31 @@ public class AlimentoController {
     AlimentoRepository repository;
 
     @Autowired
+    UsuarioRepository usuarioRepository;
+
+    @Autowired
     PagedResourcesAssembler<Object> assembler;
 
     @GetMapping
-    public PagedModel<EntityModel<Object>> listar(@PageableDefault(size = 5) Pageable pageable) {
+    public PagedModel<EntityModel<Object>> listar(@RequestParam(required = false) String pesquisa,
+            @PageableDefault(size = 5) Pageable pageable) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
 
-        var alimentos = repository.findAll(pageable);
+        var usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
+
+        if (pesquisa == null)
+            pesquisa = "";
+
+        Page<Alimento> alimentos;
+
+        if (usuario.getTipoUsuario() == TipoUsuario.F)
+            alimentos = repository.findByUsuario(usuario, pesquisa, pageable);
+        else
+            alimentos = repository
+                    .findByDescricaoIgnoreCaseContainingOrderByDataValidadeAscValorAscDescricaoAsc(pesquisa, pageable);
+
         return assembler.toModel(alimentos.map(Alimento::toEntityModel));
 
     }
@@ -46,10 +71,7 @@ public class AlimentoController {
     @PostMapping("/cadastrar")
     public ResponseEntity<EntityModel<Alimento>> cadastrar(@RequestBody Alimento alimento) {
 
-        log.info("Cadastrando alimento: {}", alimento);
-
         repository.save(alimento);
-        log.info("Alimento cadastrado: {}", alimento);
 
         return ResponseEntity
                 .created(alimento.toEntityModel().getRequiredLink("self").toUri())
@@ -77,7 +99,7 @@ public class AlimentoController {
     @DeleteMapping("{id}")
     public ResponseEntity<Alimento> apagar(@PathVariable Integer id) {
         var alimento = getAlimento(id);
-        log.info("Apagando o alimento: " + alimento);
+        
 
         alimento.setAtivo(false);
         repository.save(alimento);

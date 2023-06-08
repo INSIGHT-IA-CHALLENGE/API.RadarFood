@@ -31,7 +31,7 @@ public class TokenService {
         String token = JWT.create()
                     .withSubject(credencial.email())
                     .withIssuer("RadarFood")
-                    .withExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS))
+                    .withExpiresAt(Instant.MAX)
                     .sign(alg);
         return new Token(token, "JWT", "Bearer");
     }

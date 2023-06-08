@@ -23,6 +23,7 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -30,6 +31,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Alimento {
 
     @Id
@@ -68,7 +70,7 @@ public class Alimento {
         return EntityModel.of(
             this,
             linkTo(methodOn(AlimentoController.class).buscar(id)).withSelfRel(),
-            linkTo(methodOn(AlimentoController.class).listar(Pageable.unpaged())).withRel("all"),
+            linkTo(methodOn(AlimentoController.class).listar(null, Pageable.unpaged())).withRel("all"),
             linkTo(methodOn(AlimentoController.class).atualizar(id, this)).withRel("update"),
             linkTo(methodOn(AlimentoController.class).apagar(id)).withRel("delete")
         );

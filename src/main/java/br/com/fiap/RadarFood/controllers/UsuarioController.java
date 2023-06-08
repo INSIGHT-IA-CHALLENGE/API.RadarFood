@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -20,15 +21,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.fiap.RadarFood.exception.RestNotFoundException;
 import br.com.fiap.RadarFood.models.Credencial;
+import br.com.fiap.RadarFood.models.Token;
 import br.com.fiap.RadarFood.models.Usuario;
 import br.com.fiap.RadarFood.repository.UsuarioRepository;
 import br.com.fiap.RadarFood.security.TokenService;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/usuario")
 public class UsuarioController {
-    
+
     Logger log = LoggerFactory.getLogger(UsuarioController.class);
 
     @Autowired
@@ -42,23 +45,39 @@ public class UsuarioController {
 
     @Autowired
     TokenService tokenService;
-    
+
     @PostMapping("/cadastrar")
     public ResponseEntity<EntityModel<Usuario>> cadastrar(@RequestBody Usuario usuario) {
-        log.info("Cadastrando usuário: {}", usuario);
 
-        usuario.setSenha(encoder.encode(usuario.getSenha()));
-        repository.save(usuario);
+        if (!repository.findByEmail(usuario.getEmail()).isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
 
-        log.info("Usuário cadastrado: {}", usuario);
-        
+        if (!repository.findByTelefone(usuario.getTelefone()).isEmpty())
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+
+        try {
+            usuario.setSenha(encoder.encode(usuario.getSenha()));
+            repository.save(usuario);
+
+        } catch (ConstraintViolationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
         return ResponseEntity
                 .created(usuario.toEntityModel().getRequiredLink("self").toUri())
                 .body(usuario.toEntityModel());
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Object> login(@RequestBody @Valid Credencial credencial){
+    public ResponseEntity<Token> login(@RequestBody @Valid Credencial credencial) {
+
+        if (repository.findByEmail(credencial.email()).isEmpty())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
         manager.authenticate(credencial.toAuthentication());
 
         var token = tokenService.generateToken(credencial);
@@ -67,21 +86,35 @@ public class UsuarioController {
 
     @GetMapping
     public EntityModel<Usuario> buscar() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
 
-        log.info("Buscando usuario com email " + email);
+            var usuario = repository.findByEmail(email)
+                    .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
 
-        var usuario = repository.findByEmail(email)
-                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
-        
-        return usuario.toEntityModel();
+            return usuario.toEntityModel();
+        } catch (Exception e) {
+            return null;
+        }
 
     }
 
     @PutMapping("{id}")
     public EntityModel<Usuario> atualizar(@PathVariable Integer id, @RequestBody @Valid Usuario usuario) {
-        log.info("Atualizando usuario com id " + id);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        var usuarioLogado = repository.findByEmail(email)
+                .filter(u -> u.getAtivo())
+                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
+
+        if (usuarioLogado.getId() != id)
+            throw new RestNotFoundException("Acesso não autorizado");
+
+        if(!usuario.getSenha().toString().equals(usuarioLogado.getSenha().toString()))
+            usuario.setSenha(encoder.encode(usuario.getSenha()));
+        
         getUsuario(id);
         usuario.setId(id);
         repository.save(usuario);
@@ -92,8 +125,15 @@ public class UsuarioController {
 
     @DeleteMapping("{id}")
     public ResponseEntity<Usuario> apagar(@PathVariable Integer id) {
-        var usuario = getUsuario(id);
-        log.info("Apagando o usuario: " + usuario);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        var usuario = repository.findByEmail(email)
+                .filter(u -> u.getAtivo())
+                .orElseThrow(() -> new RestNotFoundException("Usuario não encontrada"));
+
+        if (usuario.getId() != id)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         usuario.setAtivo(false);
         repository.save(usuario);
